@@ -154,6 +154,9 @@ class InvalidRequestError(OAuth2Error):
     """
     error = 'invalid_request'
     status_code = 400
+    description = ("The request is missing a required parameter, includes an "
+                   "invalid parameter value, includes a parameter more than "
+                   "once, or is otherwise malformed.")
 
 
 class InvalidTokenError(OAuth2Error):
@@ -167,6 +170,8 @@ class InvalidTokenError(OAuth2Error):
     """
     error = 'invalid_token'
     status_code = 401
+    description = ("The access token provided is expired, revoked, malformed, "
+                   "or invalid for other reasons.")
 
 
 class InsufficientScopeError(OAuth2Error):
@@ -179,38 +184,44 @@ class InsufficientScopeError(OAuth2Error):
     """
     error = 'insufficient_scope'
     status_code = 403
+    description = ("The request requires higher privileges than provided by "
+                   "the access token.")
 
 
 class AccessDeniedError(OAuth2Error):
-
     """The resource owner or authorization server denied the request."""
     error = 'access_denied'
     status_code = 401
+    description = ("The resource owner or authorization server denied the "
+                   "request.")
 
 
 class UnsupportedResponseTypeError(OAuth2Error):
-
     """The authorization server does not support obtaining an authorization
     code using this method.
     """
     error = 'unsupported_response_type'
+    description = ("The authorization server does not support obtaining an "
+                   "authorization code using this method.")
 
 
 class InvalidScopeError(OAuth2Error):
-
     """The requested scope is invalid, unknown, or malformed."""
     error = 'invalid_scope'
     status_code = 401
+    description = "The requested scope is invalid, unknown, or malformed."
 
 
 class ServerError(OAuth2Error):
-
     """The authorization server encountered an unexpected condition that
     prevented it from fulfilling the request.  (This error code is needed
     because a 500 Internal Server Error HTTP status code cannot be returned
     to the client via a HTTP redirect.)
     """
+    status_code = 500
     error = 'server_error'
+    description = ("The authorization server encountered an unexpected "
+                   "condition that prevented it from fulfilling the request.")
 
 
 class TemporarilyUnavailableError(OAuth2Error):
@@ -220,7 +231,11 @@ class TemporarilyUnavailableError(OAuth2Error):
     (This error code is needed because a 503 Service Unavailable HTTP
     status code cannot be returned to the client via a HTTP redirect.)
     """
+    status_code = 503
     error = 'temporarily_unavailable'
+    description = ("The authorization server is currently unable to handle "
+                   "the request due to a temporary overloading or maintenance "
+                   "of the server.")
 
 
 class InvalidClientError(OAuth2Error):
@@ -237,6 +252,9 @@ class InvalidClientError(OAuth2Error):
     """
     error = 'invalid_client'
     status_code = 401
+    description = ("Client authentication failed (e.g., unknown client, no "
+                   "client authentication included, or unsupported "
+                   "authentication method)")
 
 
 class InvalidGrantError(OAuth2Error):
@@ -248,6 +266,11 @@ class InvalidGrantError(OAuth2Error):
     """
     error = 'invalid_grant'
     status_code = 401
+    description = ("The provided authorization grant (e.g., authorization "
+                   "code, resource owner credentials) or refresh token is "
+                   "invalid, expired, revoked, does not match the redirection "
+                   "URI used in the authorization request, or was issued to "
+                   "another client.")
 
 
 class UnauthorizedClientError(OAuth2Error):
@@ -257,6 +280,8 @@ class UnauthorizedClientError(OAuth2Error):
     """
     error = 'unauthorized_client'
     status_code = 401
+    description = ("The client is not authorized to request an authorization "
+                   "code using this method, or use this grant type.")
 
 
 class UnsupportedGrantTypeError(OAuth2Error):
@@ -265,6 +290,8 @@ class UnsupportedGrantTypeError(OAuth2Error):
     server.
     """
     error = 'unsupported_grant_type'
+    description = ("The authorization grant type is not supported by the "
+                   "authorization server.")
 
 
 class UnsupportedTokenTypeError(OAuth2Error):
