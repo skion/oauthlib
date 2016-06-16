@@ -50,6 +50,7 @@ class OAuth2Error(Exception):
             self.status_code = status_code
 
         if request:
+            self.request = request
             self.redirect_uri = request.redirect_uri
             self.client_id = request.client_id
             self.scopes = request.scopes
