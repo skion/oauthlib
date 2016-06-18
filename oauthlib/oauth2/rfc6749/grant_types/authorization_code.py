@@ -367,7 +367,6 @@ class AuthorizationCodeGrant(GrantTypeBase):
             'response_type': request.response_type,
             'response_mode': request.response_mode,
             'state': request.state,
-            'request': request,
         }
 
         for validator in self._authorization_validators:

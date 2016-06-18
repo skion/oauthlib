@@ -349,7 +349,6 @@ class ImplicitGrant(GrantTypeBase):
             'redirect_uri': request.redirect_uri,
             'response_type': request.response_type,
             'state': request.state,
-            'request': request,
         }
 
         for validator in self._authorization_validators:
