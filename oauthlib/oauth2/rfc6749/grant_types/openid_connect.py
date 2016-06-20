@@ -69,9 +69,9 @@ class OpenIDConnectBase(GrantTypeBase):
         if request.state and "state" not in token:
             token['state'] = request.state
 
-        # TODO: if max_age, then we must include auth_time here
-        # TODO: acr claims
-        token['id_token'] = self.request_validator.get_id_token(request)
+        id_token = self.request_validator.get_id_token(token, request)
+        if id_token:
+            token['id_token'] = id_token
 
         return token
 
