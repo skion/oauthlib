@@ -6,8 +6,8 @@ import sys
 from oauthlib.common import (CaseInsensitiveDict, Request, add_params_to_uri,
                              extract_params, generate_client_id,
                              generate_nonce, generate_timestamp,
-                             generate_token, unicode_type, urldecode)
-
+                             generate_token, unicode_type, urldecode,
+                             TokenString)
 from .unittest import TestCase
 
 if sys.version_info[0] == 3:
@@ -219,6 +219,32 @@ class RequestTest(TestCase):
         self.assertEqual(r.headers['token'], 'foobar')
         self.assertEqual(r.token, 'banana')
 
+    def test_sanitizing_display(self):
+        payload = 'display=POPUP'
+        r = Request(URI, body=payload)
+        self.assertEqual(r.display, "popup")
+
+    def test_sanitizing_prompt(self):
+        payload = 'prompt=select_account++login'
+        r = Request(URI, body=payload)
+        self.assertEqual(r.prompt, "login select_account")
+        self.assertIn("login", r.prompt)
+        self.assertNotIn("select", r.prompt)
+
+    def test_sanitizing_response_mode(self):
+        payload = 'response_mode=+fraGMent'
+        r = Request(URI, body=payload)
+        self.assertEqual(r.response_mode, "fragment")
+        self.assertIn("fragment", r.response_mode)
+        self.assertNotIn("frag", r.response_mode)
+
+    def test_sanitizing_response_type(self):
+        payload = 'response_type=TOKEN+id_token+'
+        r = Request(URI, body=payload)
+        self.assertEqual(r.response_type, "id_token token")
+        self.assertIn("token", r.response_type)
+        self.assertNotIn("foo", r.response_type)
+
 
 class CaseInsensitiveDictTest(TestCase):
 
@@ -234,3 +260,36 @@ class CaseInsensitiveDictTest(TestCase):
         cid = CaseInsensitiveDict({})
         cid.update({'KeY': 'value'})
         self.assertEqual(cid['kEy'], 'value')
+
+
+class TokenStringTest(TestCase):
+
+    def test_looks_like_string(self):
+        ts = TokenString("id_token code")
+        self.assertEqual(ts, "id_token code")
+        self.assertEqual(ts, "id_tOKen code")
+        self.assertEqual(ts, "  id_token code  code")
+        self.assertEqual(ts.upper(), "CODE ID_TOKEN")
+
+    def test_hashable(self):
+        ts1 = TokenString("id_token code")
+        ts2 = TokenString("  id_token   code code")
+        self.assertEqual(hash(ts1), hash(ts2))
+        self.assertEqual(hash(ts1), hash("code id_token"))
+        self.assertDictEqual({ts1: "foo"}, {ts2: "foo"})
+        self.assertDictEqual({ts1: "foo"}, {"code id_token": "foo"})
+
+    def test_membership(self):
+        ts = TokenString("id_token code")
+        self.assertIn("code", ts)
+        self.assertIn("id_token", ts)
+        self.assertNotIn("token", ts)
+
+    def test_greater(self):
+        ts = TokenString("id_token code")
+        self.assertGreaterEqual(ts, "code")
+        self.assertGreaterEqual(ts, "code id_token")
+
+    def test_smaller(self):
+        ts = TokenString("id_token")
+        self.assertLess(ts, "id_token code")

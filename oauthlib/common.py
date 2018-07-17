@@ -10,6 +10,7 @@ from __future__ import absolute_import, unicode_literals
 
 import collections
 import datetime
+import functools
 import logging
 import re
 import sys
@@ -41,7 +42,8 @@ UNICODE_ASCII_CHARACTER_SET = ('abcdefghijklmnopqrstuvwxyz'
 CLIENT_ID_CHARACTER_SET = (r' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN'
                            'OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}')
 
-SANITIZE_PATTERN = re.compile(r'([^&;]*(?:password|token)[^=]*=)[^&;]+', re.IGNORECASE)
+SANITIZE_PATTERN = re.compile(r'([^&;]*(?:password|token)[^=]*=)[^&;]+',
+                              re.IGNORECASE)
 INVALID_HEX_PATTERN = re.compile(r'%[^0-9A-Fa-f]|%[0-9A-Fa-f][^0-9A-Fa-f]')
 
 always_safe = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -324,7 +326,8 @@ def to_unicode(data, encoding='UTF-8'):
             # We support 2.6 which lacks dict comprehensions
             if hasattr(data, 'items'):
                 data = data.items()
-            return dict(((to_unicode(k, encoding), to_unicode(v, encoding)) for k, v in data))
+            return dict(((to_unicode(k, encoding), to_unicode(v, encoding))
+                         for k, v in data))
 
     return data
 
@@ -363,6 +366,42 @@ class CaseInsensitiveDict(dict):
         super(CaseInsensitiveDict, self).update(*args, **kwargs)
         for k in dict(*args, **kwargs):
             self.proxy[k.lower()] = k
+
+
+@functools.total_ordering
+class TokenString(collections.UserString):
+    """
+    String type that can be used to normalize space separated parameters
+    such as display, prompt, response_type, and response_mode.
+    """
+    def __init__(self, string):
+        self.tokens = self.tokenize_string(string)
+        string = self.normalize_string(self.tokens)
+        super(TokenString, self).__init__(string)
+
+    def __contains__(self, item):
+        return item in self.tokens
+
+    def __hash__(self):
+        return super(TokenString, self).__hash__()
+
+    def __eq__(self, other):
+        if not isinstance(other, TokenString):
+            other = TokenString(other)
+        return self.tokens == other.tokens
+
+    def __lt__(self, other):
+        if not isinstance(other, TokenString):
+            other = TokenString(other)
+        return self.tokens < other.tokens
+
+    @staticmethod
+    def normalize_string(tokens):
+        return " ".join(sorted(tokens))
+
+    @staticmethod
+    def tokenize_string(string):
+        return set(string.strip().lower().split())
 
 
 class Request(object):
@@ -440,8 +479,40 @@ class Request(object):
             body = SANITIZE_PATTERN.sub('\1<SANITIZED>', str(body))
         if 'Authorization' in headers:
             headers['Authorization'] = '<SANITIZED>'
-        return '<oauthlib.Request url="%s", http_method="%s", headers="%s", body="%s">' % (
-            self.uri, self.http_method, headers, body)
+        return '<oauthlib.Request url="%s", http_method="%s", headers="%s", ' \
+               'body="%s">' % (self.uri, self.http_method, headers, body)
+
+    @property
+    def display(self):
+        return TokenString(self._params["display"])
+
+    @display.setter
+    def display(self, value):
+        self._params["display"] = TokenString(value)
+
+    @property
+    def prompt(self):
+        return TokenString(self._params["prompt"])
+
+    @prompt.setter
+    def prompt(self, value):
+        self._params["prompt"] = TokenString(value)
+
+    @property
+    def response_mode(self):
+        return TokenString(self._params["response_mode"])
+
+    @response_mode.setter
+    def response_mode(self, value):
+        self._params["response_mode"] = TokenString(value)
+
+    @property
+    def response_type(self):
+        return TokenString(self._params["response_type"])
+
+    @response_type.setter
+    def response_type(self, value):
+        self._params["response_type"] = TokenString(value)
 
     @property
     def uri_query(self):
